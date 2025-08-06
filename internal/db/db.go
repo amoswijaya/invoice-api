@@ -26,10 +26,19 @@ func getDatabaseDSN() string {
 	if dbURL == "" {
 		log.Fatal("❌ DATABASE_URL not set in environment")
 	}
+
+	if !strings.Contains(dbURL, "sslmode=") {
+		if strings.Contains(dbURL, "?") {
+			dbURL += "&sslmode=require"
+		} else {
+			dbURL += "?sslmode=require"
+		}
+		log.Println("ℹ️ DATABASE_URL modified to include sslmode=require")
+	}
+
 	log.Printf("Using DATABASE_URL: %s", maskPasswordInDSN(dbURL))
 	return dbURL
 }
-
 // Init initializes the database connection and runs migrations
 func Init() {
 	log.Println("=== Database Initialization ===")

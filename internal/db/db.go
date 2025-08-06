@@ -15,19 +15,7 @@ var DB *gorm.DB
 
 // getDatabaseDSN returns the database connection string from environment variables
 func getDatabaseDSN() string {
-	// Priority 1: DATABASE_URL (from Render auto-connect)
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		log.Printf("Using DATABASE_URL connection")
-		return dbURL
-	}
-
-	// Priority 2: POSTGRES_DSN (manual format - your original)
-	if dsn := os.Getenv("POSTGRES_DSN"); dsn != "" {
-		log.Printf("Using POSTGRES_DSN connection")
-		return dsn
-	}
-
-	// Priority 3: Individual environment variables (from Render auto-connect)
+	// Priority 1: Individual environment variables (lebih reliable untuk Render)
 	host := os.Getenv("DATABASE_HOST")
 	port := os.Getenv("DATABASE_PORT")
 	user := os.Getenv("DATABASE_USER")
@@ -44,8 +32,20 @@ func getDatabaseDSN() string {
 		return dsn
 	}
 
+	// Priority 2: DATABASE_URL (backup)
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		log.Printf("Using DATABASE_URL connection")
+		return dbURL
+	}
+
+	// Priority 3: POSTGRES_DSN (development)
+	if dsn := os.Getenv("POSTGRES_DSN"); dsn != "" {
+		log.Printf("Using POSTGRES_DSN connection")
+		return dsn
+	}
+
 	// Fallback error
-	log.Fatal("❌ No database configuration found. Please set DATABASE_URL, POSTGRES_DSN, or individual DB environment variables")
+	log.Fatal("❌ No database configuration found. Please set individual DB environment variables")
 	return ""
 }
 
@@ -58,8 +58,16 @@ func maskPasswordInDSN(dsn string) string {
 }
 
 func Init() {
+	// Debug all database environment variables
+	log.Printf("=== Database Environment Debug ===")
+	log.Printf("DATABASE_URL: %s", maskPasswordInDSN(os.Getenv("DATABASE_URL")))
+	log.Printf("DATABASE_HOST: %s", os.Getenv("DATABASE_HOST"))
+	log.Printf("DATABASE_USER: %s", os.Getenv("DATABASE_USER"))
+	log.Printf("DATABASE_NAME: %s", os.Getenv("DATABASE_NAME"))
+	log.Printf("==================================")
+
 	dsn := getDatabaseDSN()
-	log.Printf("Connecting to database: %s", maskPasswordInDSN(dsn))
+	log.Printf("Final DSN: %s", maskPasswordInDSN(dsn))
 
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})

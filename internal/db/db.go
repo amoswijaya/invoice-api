@@ -8,6 +8,7 @@ import (
 	"invoice-api/internal/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	 "strings"
 )
 
 var DB *gorm.DB

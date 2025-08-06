@@ -1,17 +1,28 @@
-FROM golang:1.18 AS build
+# Build stage
+FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
+# Copy go mod files first (better caching)
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
 COPY . .
 
-RUN go mod tidy
+# Build the app
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
-RUN CGO_ENABLED=0 go build -o app .
+# Runtime stage
+FROM alpine:latest
 
-FROM alpine:3.14
-
+RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
-COPY --from=build /app/app .
+COPY --from=builder /app/main .
 
-CMD ["./app"]
+EXPOSE 8080
+
+CMD ["./main"]
